@@ -1,0 +1,196 @@
+Q.1 Configuring Trunks between switches and VTP Pruning
+
+step 1: Topology
+    - Take any number of switches(2960) in this case we are taking 5
+    - now align that switches horizontally
+    - now connect it with the "copper straight throw" wire
+    - now click on first switch and go to cli from tab
+    - then enter and type 
+
+step 2: Switch Configuring 
+    ###For Switch 1
+
+    => switch > en
+    => switch# conf t
+    => switch(config)# hostname SW1
+    => SW1(config)# int f0/1
+    => SW1(config-if)# switchport mode trunk
+    => SW1(config-if)# exit
+    => SW1(config)# vtp domain CISCO
+    output:****
+    => SW1(config)# vtp mode server
+    output:***
+    => SW1(config)# vtp password cisco
+    output:***
+
+    - now close the terminal and restart it by clicking again same switch and press enter
+    
+    => SW1> en
+    => SW1#> conf t
+    => SW1(config)# vlan 10
+    => SW1(config-vlan)# name DATA
+    => SW1(config)# exit
+    => SW1(config)# vlan 20
+    => SW1(config-vlan)# name VOICE
+    => SW1(config-vlan)# exit
+    => SW1(config)# exit
+    => SW1# show vlan brief
+    output:***
+    => SW1#show vtp status
+    output:***
+    => SW1#show interfaces trunk
+    output:***
+
+
+    ###For Switch 2
+
+    => switch > en
+    => switch# conf t
+    => switch(config)# int f0/1
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# int f0/2
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# vtp domain CISCO
+    output:****
+    => switch(config)# vtp mode server
+    output:***
+    => switch(config)# vtp password cisco
+    output:***
+
+    - now close the terminal and restart it by clicking again same switch and press enter
+    
+    => switch> en
+    => switch#> conf t
+    => switch(config)# vlan 30
+    => switch(config-vlan)# name WIRELESS
+    => switch(config-vlan)# exit
+    => switch(config)# exit
+    => switch# show vlan brief
+    output:***
+    => SW1#show vtp status
+    output:***
+    => SW1#show interfaces trunk
+    output:***
+
+
+
+    ###For Switch 3
+
+    => switch > en
+    => switch# conf t
+    => switch(config)# int f0/1
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# int f0/2
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# vtp domain CISCO
+    output:****
+    => switch(config)# vtp mode transparent
+    output:***
+    => switch(config)# vtp password cisco
+    output:***
+    
+    => switch> en
+    => switch#> conf t
+    => switch(config)# vlan 10
+    => switch(config-vlan)# name DATA
+    => switch(config-vlan)# exit
+    => switch(config)# vlan 20
+    => switch(config-vlan)# name VOICE
+    => switch(config-vlan)# exit
+    => switch(config)# vlan 30
+    => switch(config-vlan)# name WIRELESS
+    => switch(config-vlan)# exit
+    => switch(config)# vlan 40
+    => switch(config-vlan)# name TEST
+    => switch(config-vlan)# exit
+    => switch(config)# exit
+    
+    => switch# show vlan brief
+    output:***
+    => SW1#show vtp status
+    output:***
+    => SW1#show interfaces trunk
+    output:***
+
+
+
+    ###For Switch 4
+
+    => switch > en
+    => switch# conf t
+    => switch(config)# int f0/1
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# int f0/2
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# vtp domain CISCO
+    output:****
+    => switch(config)# vtp mode client
+    output:***
+    => switch(config)# vtp password cisco
+    output:***
+    
+    => switch(config)# exit
+
+    => switch# show vlan brief
+    output:***
+    => SW1#show vtp status
+    output:***
+    => SW1#show interfaces trunk
+    output:***
+
+
+
+    ###For Switch 5
+
+    => switch > en
+    => switch# conf t
+    => switch(config)# int f0/1
+    => switch(config-if)# switchport mode trunk
+    => switch(config-if)# exit
+    => switch(config)# vtp domain CISCO
+    output:****
+    => switch(config)# vtp mode server
+    output:***
+    => switch(config)# vtp password cisco
+    output:***
+    
+    => switch(config)# exit
+
+    => switch# show vlan brief
+    output:***
+    => SW1#show vtp status
+    output:***
+    => SW1#show interfaces trunk
+    output:***
+
+step 3: VTP Pruning on Switch 3
+
+    ###Switch3
+    => switch > en
+    => switch# show interfaces trunk
+    output:** (here you can see not pruned ports as 1,10,20,30,40)
+    => switch# conf t
+    => switch(config)# int range f0/1-2
+    => switch(config-range-if)# vlan 10
+    => switch(config-vlan)# no vlan 10 
+    => switch(config)# exit 
+
+    => switch# show interfaces trunk
+    output:** (here you can see not pruned ports as 1,10,20,30,40) as pruned 10 manually same we are going to perform for vlan 20
+
+    =>switch# conf t
+    =>switch(config)# int range f0/1-2
+    =>switch(config-if-range)# vlan 20
+    =>switch(config-vlan)# no vlan 20
+    =>switch(config)# exit
+    =>switch# show interfaces trunk
+
+    output : *** (without 20 in port)
+
+

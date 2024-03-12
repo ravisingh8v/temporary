@@ -1,0 +1,153 @@
+   Diagram
+
+
+()        ()
+R1        R2
+
+
+     []
+   Switch
+
+     []
+    VPCS
+
+
+#First assign IP to routers.
+R1(config)# int fa0/0 
+R1(config-if)# ip add 10.1.1.1 255.255.255.0 
+R2(config-if)#no shutdown 
+R2(config-if)#exit 
+
+Do the same with the second Router
+
+R2(config)# int fa0/0 
+R2(config-if)# ip address 10.1.1.2 255.255.255.0 
+R2(config-if)#no shutdown 
+R2(config-if)#exit 
+
+1 . Implement VRRP
+
+R1
+R1#conf t 
+Enter configuration commands, one per line. End with CNTL/Z. 
+R1(config)#int f0/0 
+R1(config-if)#vrrp 10 ip 10.1.1.100 
+R1(config-if)# 
+-> Backup 
+-> Master 
+R1(config-if)#vrrp 10 priority 110 
+R1(config-if)#exit 
+R1(config)#exit 
+R1# 
+R1# show vrrp brief
+
+R2 
+Grp Pri Time Own Pre State Master addr 10 110 3570 Y Master 10.1.1.1 Group addr 10.1.1.100.
+
+2. Now, provide the virtual IP address(10.1.1.100), group name VRRP_TEST, and priority 100. Also, group number 10 is assigned. 
+R2#conf t 
+Enter configuration commands, one per line. End with CNTL/Z. 
+R2(config)#int f0/0 
+R2(config-if)#vrrp 10 ip 10.1.1.100 
+-> Backup 
+R2(config-if)#vrrp 10 priority 100 
+R2(config-if)#exit 
+R2(config)#exit 
+R2#s 
+R2# show vrrp brief
+
+3. TEST 
+Pc Grp Pri Time Own Pre State Master addr 10 100 3609 
+PC1> ip 10.1.1.128 10.1.1.100 
+Checking for duplicate address... 
+PC1 : 10.1.1.128 255.255.255.0 gateway 10.1.1.100 Group addr Y Backup 10.1.1.1 10.1.1.100 .
+PC1> ping 10.1.1.100 
+84 bytes from 10.1.1.100 icmp_seq=1 ttl=255 time=15.803 ms 
+84 bytes from 10.1.1.100 icmp_seq=2 ttl=255 time=15.773 ms 
+84 bytes from 10.1.1.100 icmp_seq=3 ttl=255 time=15.735 ms 
+84 bytes from 10.1.1.100 icmp_seq=4 ttl=255 time=15.777 ms 
+84 bytes from 10.1.1.100 icmp_seq=5 ttl=255 time=15.782 ms 
+PC1> trace 10.1.1.100
+
+
+2. Implement HSRP :
+
+Hot Standby Router Protocol (HSRP) is a CISCO proprietary protocol, which provides redundancy for a local subnet. 
+
+1. Now, Let s provide virtual IP address (10.1.1.100), group name HSRP_TEST, group number 1and priority 110. Also, preempt has been enabled i.e. if the active router goes down then the standby router automatically becomes the active router. 
+R1#conf t 
+Enter configuration commands, one per line. End with CNTL/Z. 
+R1(config)#int f0/0 
+R1(config-if)#standby 1 ip 10.1.1.100 
+R1(config-if)#standby 1 name HSRP_TEST 
+R1(config-if)#standby 1 
+> Active 
+R1(config-if)#standby 1 priority 110 
+R1(config-if)#standby 1 preempt 
+R1(config-if)#exit  
+R1(config)#exit 
+R1# 
+R1#show standby brief
+
+2. Now, we will provide virtual IP address (10.1.1.100), group name HSRP_TEST and priority 100. Also, group number 1 and preempt has been enabled. 
+R2#conf t 
+Enter configuration commands, one per line. End with CNTL/Z. 
+R2(config)#int f0/0 
+R2(config-if)#standby 1 ip 10.1.1.100 
+R2(config-if)#standby 1 name HSRP_TEST 
+R2(config-if)#standby 1 priority 
+R2(config-if)#standby 1 priority 100 
+R2(config-if)#standby 1 preempt 
+R2(config-if)#exit  
+R2(config)#exit 
+*Mar 1 00:12:29.087: %SYS-5-CONFIG_I: Configured from console by console 
+As we have provided priority 110 to r1, therefore it will become the active router. 
+R2#show standby brief 
+
+
+3.Test 
+PC1> ping 10.1.1.100
+PC1> trace 10.1.1.100 -P 6 
+
+
+3. Implement GLBP 
+Gateway Load Balancing Protocol (GLBP) is one of First Hop Redundancy Protocol (FHRP) which provides redundancy like other First Hop Redundancy Protocol, also provides load Balancing.
+
+1. Now, configure virtual IP, GLBP priority, preemption and type of load Balancing. 
+R1#conf t 
+Enter configuration commands, one per line. End with CNTL/Z. 
+R1(config)#int f0/0 
+R1(config-if)#glbp 1 ip 10.1.1.100 
+R1(config-if)#glbp 1 priority 120 
+R1(config-if)#glbp 1 preem 
+-> Active 
+R1(config-if)#glbp 1 preempt 
+R1(config-if)#glbp 1 load- 
+-> Active 
+R1(config-if)#glbp 1 load-balancing round-robin 
+R1(config-if)#exit 
+R1# 
+R1#show glbp brief
+
+
+2. Here, assign the virtual IP as 10.1.1.100 from the local subnet and priority(assign R1 with higher  priority as we want this router to become AVG). Also, preempt has been enabled and load Balancing of type round-robin. Now, configure same GLBP for r2. 
+
+R2#conf t 
+Enter configuration commands, one per line. End with CNTL/Z. 
+R2(config)#int f0/0 
+R2(config-if)#glbp 1 ip 10.1.1.100 
+R2(config-if)#glbp 1 priority 100 
+R2(config-if)#glbp 1 preempt 
+Listen -> Active 
+R2(config-if)#glbp 1 load-balancing round-robin 
+R2(config-if)#exit 
+R2(config)#exit 
+R2# 
+R2#sho 
+ Configured from console by console 
+R2#show glbp brief
+
+
+3.Test
+PC1> ping 10.1.1.100 
+PC1> trace 10.1.1.100 -P 6 
