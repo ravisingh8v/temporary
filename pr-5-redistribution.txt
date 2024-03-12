@@ -1,0 +1,320 @@
+Practical 5:
+1. Implement Route Redistribution Between Multiple Protocols
+2. Configure Route Redistribution Within the Same Interior Gateway 
+
+Introduction
+Often, using a single routing protocol in an organisation is preferred but there are some conditions in 
+which we have to use multi protocol routing. These conditions include multiple administrator running 
+multiple protocols, company mergers or usage of multi-vendors devices. Therefore, we have to
+advertise a route learned through a routing protocol or by any other means (like static route or directly 
+connected route) in different routing protocol. This process is called redistribution.
+Redistribution –
+
+1. Implement Route Redistribution Between Multiple Protocols
+Step 1: Topology
+    - Take 3 router place them horizontly in top connect all with three with Serial DCE wire
+    - then select 2 2950 switches and place it below router in Between and connect both with side routers only with copper straight
+    - now take 4 pc 2 connect with switch one and 2nd with another switch which is look like below connect both pc with its switch with copper straight
+
+      ()  ()  ()
+      []      []
+    [] []    [] []
+
+
+Step 2: Basic Configurations 
+#Router 0
+=> Router>en
+
+=> Router#conf t
+=> Router(config)#in f0/0
+=> Router(config-if)#ip address 192.168.1.100 255.255.255.0 
+=> Router(config-if)#no shutdown
+=> Router(config-if)#
+
+=> Router(config-if)#end
+=> Router#%SYS-5-CONFIG_I: Configured from console by console 
+=> Router#conf t
+=> Router(config)#ip dhcp pool abc
+=> Router(dhcp-config)#default-router 192.168.1.100
+=> Router(dhcp-config)#network 192.168.1.0 255.255.255.0 
+=> Router(dhcp-config)#int s0/0
+=> Router(config-if)#ip address 12.1.1.1 255.0.0.0 
+=> Router(config-if)#no shutdown
+=> Router(config-if)#
+=> Router(config-if)#
+=> Router(config-if)#clock rate 64000 
+=> Router(config-if)#
+=> Router(config-if)#
+
+#Router 1
+=> Router>en 
+=> Router#conf t
+=> Router(config)#int s0/0
+=> Router(config-if)#ip address 12.1.1.2 255.0.0.0 
+=> Router(config-if)#no shutdown
+=> Router(config-if)#
+=> Router(config-if)#
+=> Router(config-if)#int s0/1
+=> Router(config-if)#ip address 23.1.1.1 255.0.0.0 
+=> Router(config-if)#no shutdown
+=> Router(config-if)#
+=> Router(config-if)#end
+
+=> Router#
+=> Router#show ip int brief
+
+=> Router#
+=> Router#configure terminal
+=> Router(config)#interface Serial0/0
+=> Router(config-if)#clock rate 64000
+=> Router(config-if)#
+
+#Router2
+
+=> Router>en 
+=> Router#conf t
+Router(config)#int s0/0
+Router(config-if)#ip address 23.1.1.2 255.0.0.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+Router(config-if)#
+Router(config-if)#clock rate 64000
+Router(config-if)#exit
+Router(config)#interface FastEthernet0/0 
+Router(config-if)#no shutdown
+Router(config-if)#
+Router(config-if)#ip address 192.168.2.100 255.255.255.0 
+Router(config-if)#
+Router(config-if)#exit 
+Router(config)#ip dhcp pool abc
+Router(dhcp-config)#default-router 192.168.2.100
+Router(dhcp-config)#network 192.168.2.0 255.255.255.0
+
+#Router 0 is aware of only directly connected network and cannot connect to router 2 pcs pc 2and pc 3
+Router>en 
+Router#show ip route
+
+Router# 
+Router#conf t
+
+Router(config)#router eigrp 13
+Router(config-router)#network 192.168.1.0
+Router(config-router)#no auto-summary 
+Router(config-router)#network 12.0.0.0
+Router(config-router)#do show ip route
+
+Router(config-router)#no auto-summary 
+Router(config-router)#
+
+#Router 1
+Router>en 
+Router#show ip route
+
+Router#conf t
+Router(config)#router eigrp 13
+Router(config-router)#network 12.0.0.0 
+Router(config-router)#
+Router(config-router)#no auto-summary 
+Router(config-router)#
+Router(config-router)#end 
+Router#
+Router#show ip eigrp neighbors
+Router#ping 12.1.1.1
+
+RIP On Router1
+
+Router# en 
+Router#conf t
+Router(config)#router rip
+Router(config-router)#version 2 
+Router(config-router)#no auto-summary 
+Router(config-router)#network 23.0.0.0 
+Router(config-router)#end
+Router#
+Router#show ip protocols 
+Routing Protocol is "eigrp 13 "
+Router#
+
+#Router 2
+=> Router>en 
+=> Router#show ip route
+=> Router#conf t
+
+Router(config)#router rip
+Router(config-router)#version 2 
+Router(config-router)#no auto-summary 
+Router(config-router)#network 23.0.0.0
+Router(config-router)#network 192.168.2.0 
+Router(config-router)#end
+Router#
+Router#show ip route
+Router#
+Router#
+Router#show ip route
+Router#
+##On Router 0
+Router>en 
+Router#show ip route
+
+Router#conf t
+Router(config)#router eigrp 13
+Router(config-router)#redistribute rip metric 1 1 255 255 1 
+Router(config-router)#exit
+Router#show ip protocols 
+Router#show ip route
+Router#
+Router(config)#router rip
+Router(config-router)#redistribute eigrp 13 metric 1 
+Router(config-router)#exit
+Router(config)#
+Router>en
+Router#show ip protocols 
+Router#show ip route
+Router#
+
+2. Configure Route Redistribution Within the Same Interior Gateway Protocol
+
+Step 1: Topology
+
+    - use same as above but with below configuration
+
+Step 2: Basic configurations 
+Router 0
+Router>en 
+Router#conf t
+Router(config)#int f0/0
+Router(config-if)#ip address 192.168.1.100 255.255.255.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+Router(config-if)#end
+Router#
+Router#conf t
+Router(config)#ip dhcp pool abc
+Router(dhcp-config)#default-router 192.168.1.100
+Router(dhcp-config)#network 192.168.1.0 255.255.255.0 
+Router(dhcp-config)#int s0/0
+Router(config-if)#ip address 12.1.1.1 255.0.0.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+Router(config-if)#clock rate 64000 
+Router(config-if)#
+Router#show ip int brief
+Router#
+
+#Router 1
+
+Router>enable 
+Router#
+Router#configure terminal
+Router(config)#interface Serial0/0
+Router(config-if)#ip address 12.1.1.2 255.0.0.0
+Router(config-if)#ip address 12.1.1.2 255.0.0.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+Router(config-if)#exit 
+Router(config)#interface Serial0/1 
+Router(config-if)#
+Router(config-if)#ip address 23.1.1.1 255.0.0.0
+Router(config-if)#ip address 23.1.1.1 255.0.0.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+Router(config-if)#exit
+Router(config)#interface Serial0/0 
+Router(config-if)#clock rate 64000
+Router#show ip int brief
+
+#Router 2
+
+Router>enable 
+Router#
+Router#configure terminal
+Enter configuration commands, one per line. End with CNTL/Z. 
+Router(config)#interface Serial0/0
+Router(config-if)#ip address 23.1.1.2 255.0.0.0
+Router(config-if)#ip address 23.1.1.2 255.0.0.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+
+Router(config-if)#
+Router(config-if)#exit 
+Router(config)#interface FastEthernet0/0
+Router(config-if)#ip address 192.168.2.100 255.255.255.0
+Router(config-if)#ip address 192.168.2.100 255.255.255.0 
+Router(config-if)#no shutdown
+Router(config-if)#
+ 
+Router(config-if)#exit
+Router(config)#ip dhcp pool abc
+Router(dhcp-config)#default-router 192.168.2.100
+Router(dhcp-config)#network 192.168.2.0 255.255.255.0 
+Router(dhcp-config)#
+
+
+Router#show ip route
+
+Router#conf t
+. 
+Router(config)#router eigrp 13
+Router(config-router)#network 192.168.1.0 
+Router(config-router)#no auto-summary 
+Router(config-router)#network 12.0.0.0 
+Router(config-router)#no auto-summary
+
+Router>en 
+Router#show ip route
+
+Router#conf t
+ 
+Router(config)#router eigrp 13
+Router(config-router)#network 12.0.0.0 
+Router(config-router)#
+
+Router(config-router)#no auto-summary 
+Router(config-router)#
+Router(config-router)#end 
+Router#
+
+Router#ping 12.1.1.1
+
+Router#
+
+Router#conf t
+ 
+Router(config)#router eigrp 53
+Router(config-router)#network 23.0.0.0 
+Router(config-router)#no auto-summary 
+Router(config-router)#end
+Router#
+
+Router#show ip protocols
+
+
+Router#
+
+Router>en 
+Router#show ip route
+
+Router#conf t
+ 
+Router(config)#router eigrp 53
+Router(config-router)#no auto-summary 
+Router(config-router)#network 23.0.0.0 
+Router(config-router)#
+
+Router(config-router)#network 192.168.2.0 
+Router(config-router)#end
+Router#
+
+Router(config)#router eigrp 13
+Router(config-router)#redistribute eigrp 53 metric 1 1 255 255 1 
+Router(config-router)#exit
+Router(config)#
+
+Router#show ip route
+
+Router#
+
+Router(config)#router eigrp 53
+Router(config-router)#redistribute eigrp 13 metric 1 1 255 255 1 
+Router(config-router)#exit
+Router(config)#
